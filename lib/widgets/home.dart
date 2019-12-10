@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -33,99 +36,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: color,
-        title: Text(widget.title),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Text('Remplisser tous les champs pour obtenir votre besoin journalier en calories',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16.0,
-              ),
-            ),
-            Card(
-              elevation: 15.0,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.65,
-                width: MediaQuery.of(context).size.width * 0.9,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        Text('Homme'),
-                        Switch(
-                          value: gender,
-                          activeColor: color,
-                          inactiveThumbColor: color,
-                          inactiveTrackColor: color,
-                          onChanged: (bool b) {
-                            setState(() {
-                              gender = b;
-                              gender ? color = Colors.pink : color = Colors.blue;
-                            });
-                          },
-                        ),
-                        Text('Femme'),
-                      ],
-                    ),
-                    RaisedButton(
-                      color: color,
-                      child: Text((date == null) ? 'Choisir votre date de naissance': 'Votre âge est de : $age ans'),
-                      onPressed: montrerDate,
-                      textColor: Colors.white,
-                    ),
-                    Text('Votre taille est de ${height.floor()} cm'),
-                    Slider(value: height,
-                      activeColor: color,
-                      min: 100.0,
-                      max: 215.0,
-                      onChanged: (double d) {
-                        setState(() {
-                          height = d;
-                        });
-                      },
-                    ),
-                    TextField(
-                      onSubmitted: (String string) {
-                        setState(() {
-                          weight = int.parse(string);
-                          submitted = "Votre poids est de $string kg";
-                        });
-                      },
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Entre votre poids en kilos',
-                      ),
-                    ),
-                    Text(submitted ?? ''),
-                    Text("Quelle est votre fréquence d'activité?"),
-                    rowRadio(),
-                  ],
-                ),
-              ),
-            ),
-            RaisedButton(
-              color: color,
-              onPressed: calculCalories,
-              child: Text('Calculez',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
+    if (Platform.isIOS) {
+      print ('Nous sommes sur iOS');
+    } else {
+      print ('Nous ne sommes pas sur iOS');
+    }
+    gender ? color = Colors.pink : color = Colors.blue;
+    return GestureDetector(
+      onTap: (() => FocusScope.of(context).requestFocus(FocusNode())),
+      child: (Platform.isIOS)
+      ? CupertinoPageScaffold(
+        navigationBar: CupertinoNavigationBar(
+          backgroundColor: color,
+          middle: Text(widget.title),
         ),
+        child: body())
+      : Scaffold(
+        appBar: AppBar(
+          backgroundColor: color,
+          title: Text(widget.title),
+        ),
+        body: body()
       ),
     );
   }
+
   Future montrerDate() async {
     DateTime choix = await showDatePicker(context: context, initialDatePickerMode: DatePickerMode.year, initialDate: DateTime.now(), firstDate: DateTime(1983), lastDate: DateTime.now());
     if (choix != null) {
@@ -199,22 +134,43 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext buildContext) {
-       return AlertDialog(
-         title: Text("Résultat :"),
-         content: Text("Votre montant de calories journalier est de : $caloriesTotal"),
-         actions: <Widget>[
-           FlatButton(
-             onPressed: () {
-               Navigator.pop(buildContext);
-             },
-             child: Text('Retour',
-               style: TextStyle(
-                 color: Colors.green,
-               ),
-             ),
-           ),
-         ],
-       );
+        if (Platform.isIOS) {
+          return CupertinoAlertDialog(
+            title: Text("Résultat :"),
+            content: Text(
+                "Votre montant de calories journalier est de : $caloriesTotal"),
+            actions: <Widget>[
+              CupertinoButton(
+                onPressed: () {
+                  Navigator.pop(buildContext);
+                },
+                child: Text('Retour',
+                  style: TextStyle(
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ],
+          );
+        } else {
+          return AlertDialog(
+            title: Text("Résultat :"),
+            content: Text(
+                "Votre montant de calories journalier est de : $caloriesTotal"),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.pop(buildContext);
+                },
+                child: Text('Retour',
+                  style: TextStyle(
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
       }
     );
   }
@@ -223,7 +179,25 @@ class _MyHomePageState extends State<MyHomePage> {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext buildContext) {
+      builder: (BuildContext buildContext)
+    {
+      if (Platform.isIOS) {
+        return CupertinoAlertDialog(
+          title: Text('Erreur'),
+          content: Text('Tous les champs ne sont pas remplis'),
+          actions: <Widget>[
+            CupertinoButton(
+              onPressed: () {
+                Navigator.pop(buildContext);
+              },
+              child: Text('OK', style: TextStyle(
+                color: Colors.red,
+              ),
+              ),
+            ),
+          ],
+        );
+      } else {
         return AlertDialog(
           title: Text('Erreur'),
           content: Text('Tous les champs ne sont pas remplis'),
@@ -238,8 +212,155 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ],
-        );
+        );}
       }
+    );
+  }
+
+  Widget switchPlatform() {
+    if (Platform.isIOS) {
+      return CupertinoSwitch(
+        value: gender,
+        activeColor: color,
+        onChanged: (bool b) {
+          setState(() {
+            gender = b;
+          });
+        },
+      );
+    } else {
+      return Switch(
+        value: gender,
+        activeColor: color,
+        inactiveThumbColor: color,
+        inactiveTrackColor: color,
+        onChanged: (bool b) {
+          setState(() {
+            gender = b;
+          });
+        },
+      );
+    }
+  }
+
+  Widget calcButton() {
+    if (Platform.isIOS) {
+      return CupertinoButton(
+        color: color,
+        onPressed: calculCalories,
+        child: Text('Calculez',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+      );
+    } else {
+      return RaisedButton(
+        color: color,
+        onPressed: calculCalories,
+        child: Text('Calculez',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget ageButton() {
+    if (Platform.isIOS) {
+      return CupertinoButton(
+        color: color,
+        child: Text((date == null) ? 'Date de naissance': 'Votre âge est de : $age ans'),
+        onPressed: montrerDate,
+      );
+    } else {
+      return RaisedButton(
+        color: color,
+        child: Text((date == null) ? 'Date de naissance': 'Votre âge est de : $age ans'),
+        onPressed: montrerDate,
+        textColor: Colors.white,
+      );
+    }
+  }
+
+  Widget sliderPlatform() {
+    if (Platform.isIOS) {
+      return CupertinoSlider(
+          value: height,
+          min: 100.0,
+          max: 215.0,
+          onChanged: (double d) {
+            setState(() {
+              height = d;
+            });
+          });
+    } else {
+      return Slider(value: height,
+        activeColor: color,
+        min: 100.0,
+        max: 215.0,
+        onChanged: (double d) {
+          setState(() {
+            height = d;
+          });
+        },
+      );
+    }
+  }
+
+  Widget body() {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          Text('Remplisser tous les champs pour obtenir votre besoin journalier en calories',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16.0,
+            ),
+          ),
+          Card(
+            elevation: 15.0,
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.65,
+              width: MediaQuery.of(context).size.width * 0.9,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Text('Homme'),
+                      switchPlatform(),
+                      Text('Femme'),
+                    ],
+                  ),
+                  ageButton(),
+                  Text('Votre taille est de ${height.floor()} cm'),
+                  sliderPlatform(),
+                  TextField(
+                    onSubmitted: (String string) {
+                      setState(() {
+                        weight = int.parse(string);
+                        submitted = "Votre poids est de $string kg";
+                      });
+                    },
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Entre votre poids en kilos',
+                    ),
+                  ),
+                  Text(submitted ?? ''),
+                  Text("Quelle est votre fréquence d'activité?"),
+                  rowRadio(),
+                ],
+              ),
+            ),
+          ),
+          calcButton(),
+        ],
+      ),
     );
   }
 }
