@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-MaterialColor color = Colors.pink;
+import 'package:flutter/services.dart';
+
+MaterialColor color = Colors.blue;
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
@@ -17,37 +19,27 @@ class _MyHomePageState extends State<MyHomePage> {
   String submitted;
   bool gender = false;
   double height = 100.0;
-  List<String> activities = ["Faible", "Modere", "Forte"];
+  Map activities = {
+    0: "Faible",
+    1: "Modere",
+    2: "Forte"
+  };
   int itemSelected;
+  int caloriesBase;
+  int caloriesTotal;
   int age;
+  int weight;
   DateTime date;
-
-  List<Widget> radios() {
-    List<Widget> l = [];
-    for (int x = 0 ; x < activities.length ; x++) {
-      Row row = Row(
-        children: <Widget>[
-          Text(activities[x]),
-          Radio(value: x, groupValue: itemSelected, activeColor: color, onChanged: (int i) {
-            setState(() {
-              itemSelected = i;
-            });
-          }),
-        ],
-      );
-      l.add(row);
-    }
-    return l;
-  }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: color,
         title: Text(widget.title),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
@@ -104,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     TextField(
                       onSubmitted: (String string) {
                         setState(() {
+                          weight = int.parse(string);
                           submitted = "Votre poids est de $string kg";
                         });
                       },
@@ -114,18 +107,15 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     Text(submitted ?? ''),
                     Text("Quelle est votre fréquence d'activité?"),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: radios(),
-                    )
+                    rowRadio(),
                   ],
                 ),
               ),
             ),
             RaisedButton(
               color: color,
-              onPressed: (() => print('coucou')),
-              child: Text('Calculez votre besoin',
+              onPressed: calculCalories,
+              child: Text('Calculez',
                 style: TextStyle(
                   color: Colors.white,
                 ),
@@ -144,5 +134,112 @@ class _MyHomePageState extends State<MyHomePage> {
         age = (DateTime.now().difference(date).inDays / 365.25).floor();
       });
     }
+  }
+
+  Row rowRadio() {
+    List<Widget> l = [];
+    activities.forEach((key, value) {
+      Column column = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Radio(
+            value: key,
+            activeColor: color,
+            groupValue: itemSelected,
+            onChanged: (Object i) {
+              setState(() {
+                itemSelected = i;
+              });
+            }),
+          Text(value, style: TextStyle(
+            color: color,
+            ),
+          ),
+        ],
+      );
+      l.add(column);
+    });
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: l,
+    );
+  }
+
+  void calculCalories() {
+    if (age != null && weight != null && itemSelected != null) {
+      if (!gender) {
+        caloriesBase = (66.4730 + (weight * 13.7516) + (height * 5.0033) - (age * 6.7550)).floor();
+      } else {
+        caloriesBase = (65.0955 + (weight * 9.5634) + (height * 1.8496) - (age * 4.6756)).floor();
+      }
+      switch(itemSelected) {
+        case 0:
+          caloriesTotal = (caloriesBase * 1.2).toInt();
+          break;
+        case 1:
+          caloriesTotal = (caloriesBase * 1.5).toInt();
+          break;
+        case 2:
+          caloriesTotal = (caloriesBase * 1.8).toInt();
+          break;
+        default:
+          caloriesTotal = caloriesBase;
+          break;
+      }
+      setState(() {
+          result();
+      });
+    } else {
+      alert();
+    }
+  }
+
+  Future result() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext buildContext) {
+       return AlertDialog(
+         title: Text("Résultat :"),
+         content: Text("Votre montant de calories journalier est de : $caloriesTotal"),
+         actions: <Widget>[
+           FlatButton(
+             onPressed: () {
+               Navigator.pop(buildContext);
+             },
+             child: Text('Retour',
+               style: TextStyle(
+                 color: Colors.green,
+               ),
+             ),
+           ),
+         ],
+       );
+      }
+    );
+  }
+
+  Future alert() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext buildContext) {
+        return AlertDialog(
+          title: Text('Erreur'),
+          content: Text('Tous les champs ne sont pas remplis'),
+          actions: <Widget>[
+            FlatButton(
+              onPressed: () {
+                Navigator.pop(buildContext);
+              },
+              child: Text('OK', style: TextStyle(
+                color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    );
   }
 }
